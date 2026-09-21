@@ -6,17 +6,58 @@ import streamlit as st
 
 # 1. 스트림릿 페이지 기본 설정 (와이드 레이아웃 사용)
 st.set_page_config(
-    page_title="전국 고령화 지도", page_icon="🗺️", layout="wide"
+    page_title="대한민국 고령화 지도 - Lemon Tang Mood",
+    page_icon="🍋",
+    layout="wide",
 )
 
-st.title("🗺️ 대한민국 시군구 고령화율 지도")
+# 2. 하츠투하츠 'Lemon Tang' 느낌의 상큼하고 청량한 테마 CSS 적용
 st.markdown(
-    "가장 최신 연도 데이터를 바탕으로 전국 시군구별 65세 이상 인구 비율을"
-    " 시각화한 앱입니다."
+    """
+    <style>
+    /* 전체 배경에 상큼한 레몬&소다 느낌의 은은한 그라데이션 및 폰트 적용 */
+    .stApp {
+        background: linear-gradient(135.6deg, #FFFDF0 0%, #F0F9FF 100%);
+        color: #2D3748;
+    }
+    
+    /* 제목 스타일링 */
+    h1 {
+        color: #1A365D;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+    
+    h3 {
+        color: #2B6CB0;
+        font-weight: 700;
+    }
+
+    /* 정보 박스 스타일 (레몬 옐로우 톤) */
+    .stAlert {
+        background-color: #FEFCBF !important;
+        border: 1px solid #ECC94B !important;
+        color: #744210 !important;
+        border-radius: 12px;
+    }
+
+    /* 데이터프레임 테두리 및 디자인 살짝 부드럽게 */
+    dataframe, .stDataFrame {
+        border-radius: 10px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.title("🍋 대한민국 시군구 고령화율 지도 (Lemon Tang Edition)")
+st.markdown(
+    "하츠투하츠의 'Lemon Tang'처럼 톡톡 튀고 상큼한 감성을 담아, 가장 최신"
+    " 연도의 전국 시군구별 65세 이상 인구 비율을 시각화한 앱입니다."
 )
 
 
-# 2. 데이터 로드 함수 (속도 향상을 위해 캐싱 적용)
+# 3. 데이터 로드 함수 (속도 향상을 위해 캐싱 적용)
 @st.cache_data
 def load_data():
   # 인구 데이터 URL (gzip 압축된 CSV)
@@ -34,13 +75,15 @@ def load_data():
 
 
 # 데이터 불러오기 실행
-with st.spinner("데이터를 불러오는 중입니다... 잠시만 기다려주세요."):
+with st.spinner(
+    "상큼한 레몬 데이터를 짜내는 중입니다... 잠시만 기다려주세요! 🍋"
+):
   df_pop, sigungu_geojson = load_data()
 
-# 3. 데이터 전처리
+# 4. 데이터 전처리
 # 가장 최신 연도 추출
 latest_year = df_pop["연도"].max()
-st.info(f"📅 적용된 데이터 기준 연도: **{latest_year}년**")
+st.info(f"✨ 적용된 데이터 기준 연도: **{latest_year}년**")
 
 df_latest = df_pop[df_pop["연도"] == latest_year].copy()
 
@@ -82,7 +125,7 @@ sigungu_df["고령화율"] = (
 ) * 100
 
 
-# 4. 5단계 구간 분류 함수 (경계값: 19%, 23%, 28%, 38%)
+# 5. 5단계 구간 분류 함수 (경계값: 19% · 23% · 28% · 38%)
 def categorize_aging(rate):
   if rate < 19:
     return "19% 미만"
@@ -110,23 +153,28 @@ sigungu_df["고령화구간"] = pd.Categorical(
     sigungu_df["고령화구간"], categories=bin_order, ordered=True
 )
 
-# 5. Plotly 단계구분도(Choropleth Map) 생성
+# 6. Plotly 단계구분도(Choropleth Map) 생성
+# Lemon Tang의 상큼함을 담은 'YlOrRd'(노랑-주황-빨강) 컬러톤 활용
 fig = px.choropleth(
     sigungu_df,
     geojson=sigungu_geojson,
     locations="sigungu_code",
     featureidkey="properties.코드",
     color="고령화구간",
-    color_discrete_sequence=px.colors.sequential.YlOrRd,  # 옅은색에서 진한색으로
+    color_discrete_sequence=px.colors.sequential.YlOrBr,  # 톡톡 튀는 레몬/브라운 계열 앰비언스
     hover_name="시군구",
     hover_data={"시도": True, "고령화율": ":.2f", "sigungu_code": False},
     labels={"고령화구간": "고령화율 구간", "시도": "시도", "고령화율": "고령화율(%)"},
 )
 
-# 지도 배경 타일 없이 경계선만 깔끔하게 표시
+# 지도 배경 타일 없이 깔끔하게 경계선만 표시
 fig.update_geos(fitbounds="locations", visible=False)
 fig.update_layout(
-    margin={"r": 0, "t": 0, "l": 0, "b": 0}, height=600, legend_title="고령화율"
+    margin={"r": 0, "t": 0, "l": 0, "b": 0},
+    height=600,
+    legend_title="🍋 고령화율 단계",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
 )
 
 # 스트림릿 화면에 지도 출력
@@ -135,11 +183,11 @@ st.plotly_chart(fig, use_container_width=True)
 st.markdown("---")
 st.subheader("📊 시군구 고령화율 순위 (Top 10 & Bottom 10)")
 
-# 6. 지도 아래 표 두 개를 나란히 배치
+# 7. 지도 아래 표 두 개를 나란히 배치
 col1, col2 = st.columns(2)
 
 with col1:
-  st.markdown("### 🔴 고령화율 높은 곳 Top 10")
+  st.markdown("### 🍊 고령화율 높은 곳 Top 10")
   top_10 = (
       sigungu_df.sort_values(by="고령화율", ascending=False)
       .head(10)[["시도", "시군구", "고령화율"]]
@@ -149,7 +197,7 @@ with col1:
   st.dataframe(top_10, use_container_width=True)
 
 with col2:
-  st.markdown("### 🔵 고령화율 낮은 곳 Top 10")
+  st.markdown("### 🧊 고령화율 낮은 곳 Top 10")
   bottom_10 = (
       sigungu_df.sort_values(by="고령화율", ascending=True)
       .head(10)[["시도", "시군구", "고령화율"]]
